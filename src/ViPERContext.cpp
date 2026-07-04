@@ -5,49 +5,39 @@
 #include "ViPERContext.h"
 #include <log/log.h>
 #include <constants.h>
-
 #define SET(type, ptr, value) (*(type *) (ptr) = (value))
-
 ViPERContext::ViPERContext() :
         config({}),
         disableReason(DisableReason::UNKNOWN),
         buffer(std::vector<float>()),
         bufferFrameCount(0),
-        enabled(false) {
+        enabled(false),
+        processTimeMs(0) {
     ALOGI("ViPERContext created");
 }
-
 void ViPERContext::copyBufferConfig(buffer_config_t *dest, buffer_config_t *src) {
     if (src->mask & EFFECT_CONFIG_BUFFER) {
         dest->buffer = src->buffer;
     }
-
     if (src->mask & EFFECT_CONFIG_SMP_RATE) {
         dest->samplingRate = src->samplingRate;
     }
-
     if (src->mask & EFFECT_CONFIG_CHANNELS) {
         dest->channels = src->channels;
     }
-
     if (src->mask & EFFECT_CONFIG_FORMAT) {
         dest->format = src->format;
     }
-
     if (src->mask & EFFECT_CONFIG_ACC_MODE) {
         dest->accessMode = src->accessMode;
     }
-
     //if (src->mask & EFFECT_CONFIG_PROVIDER) {
     //    dest->bufferProvider = src->bufferProvider;
     //}
-
     dest->mask |= src->mask;
 }
-
 void ViPERContext::handleSetConfig(effect_config_t *newConfig) {
     ALOGI("Checking input and output configuration ...");
-
     ALOGI("Input mask: 0x%04X", newConfig->inputCfg.mask);
     ALOGI("Input buffer frame count: %zu", newConfig->inputCfg.buffer.frameCount);
     ALOGI("Input sampling rate: %d", newConfig->inputCfg.samplingRate);
@@ -60,32 +50,26 @@ void ViPERContext::handleSetConfig(effect_config_t *newConfig) {
     ALOGI("Output channels: %d", newConfig->outputCfg.channels);
     ALOGI("Output format: %d", newConfig->outputCfg.format);
     ALOGI("Output access mode: %d", newConfig->outputCfg.accessMode);
-
     setDisableReason(DisableReason::UNKNOWN);
-
     copyBufferConfig(&config.inputCfg, &newConfig->inputCfg);
     copyBufferConfig(&config.outputCfg, &newConfig->outputCfg);
-
     if (config.inputCfg.buffer.frameCount != config.outputCfg.buffer.frameCount) {
         ALOGE("ViPER4Android disabled, reason [in.FC = %zu, out.FC = %zu]",
                    config.inputCfg.buffer.frameCount, config.outputCfg.buffer.frameCount);
         setDisableReason(DisableReason::INVALID_FRAME_COUNT);
         return;
     }
-
     if (config.inputCfg.samplingRate != config.outputCfg.samplingRate) {
         ALOGE("ViPER4Android disabled, reason [in.SR = %d, out.SR = %d]",
                    config.inputCfg.samplingRate, config.outputCfg.samplingRate);
         setDisableReason(DisableReason::INVALID_SAMPLING_RATE);
         return;
     }
-
 //    if (config.inputCfg.samplingRate > 48000) {
 //        ALOGE("ViPER4Android disabled, reason [SR out of range]");
 //        setDisableReason(DisableReason::INVALID_SAMPLING_RATE, "Sampling rate out of range: " + std::to_string(config.inputCfg.samplingRate));
 //        return;
 //    }
-
     // TODO: this is wrong (AUDIO_CHANNEL_IN_STEREO != AUDIO_CHANNEL_OUT_STEREO)
     if (config.inputCfg.channels != config.outputCfg.channels) {
         ALOGE("ViPER4Android disabled, reason [in.CH = %d, out.CH = %d]",
@@ -93,13 +77,11 @@ void ViPERContext::handleSetConfig(effect_config_t *newConfig) {
         setDisableReason(DisableReason::INVALID_CHANNEL_COUNT);
         return;
     }
-
     if (config.inputCfg.channels != AUDIO_CHANNEL_OUT_STEREO) {
         ALOGE("ViPER4Android disabled, reason [CH != 2]");
         setDisableReason(DisableReason::INVALID_CHANNEL_COUNT);
         return;
     }
-
     if (config.inputCfg.format != AUDIO_FORMAT_PCM_16_BIT &&
         config.inputCfg.format != AUDIO_FORMAT_PCM_32_BIT &&
         config.inputCfg.format != AUDIO_FORMAT_PCM_FLOAT) {
@@ -108,7 +90,6 @@ void ViPERContext::handleSetConfig(effect_config_t *newConfig) {
         setDisableReason(DisableReason::INVALID_FORMAT);
         return;
     }
-
     if (config.outputCfg.format != AUDIO_FORMAT_PCM_16_BIT &&
         config.outputCfg.format != AUDIO_FORMAT_PCM_32_BIT &&
         config.outputCfg.format != AUDIO_FORMAT_PCM_FLOAT) {
@@ -117,33 +98,26 @@ void ViPERContext::handleSetConfig(effect_config_t *newConfig) {
         setDisableReason(DisableReason::INVALID_FORMAT);
         return;
     }
-
     ALOGI("Input and output configuration checked.");
     setDisableReason(DisableReason::NONE);
-
     // Processing buffer
     buffer.resize(config.inputCfg.buffer.frameCount * 2);
     bufferFrameCount = config.inputCfg.buffer.frameCount;
-
     // ViPER
     viper.setSamplingRate(config.inputCfg.samplingRate);
     viper.reset();
 }
-
 int32_t ViPERContext::handleSetParam(effect_param_t *pCmdParam, void *pReplyData) {
     // The value offset of an effect parameter is computed by rounding up
     // the parameter size to the next 32 bit alignment.
     uint32_t vOffset = ((pCmdParam->psize + sizeof(int32_t) - 1) / sizeof(int32_t)) * sizeof(int32_t);
-
     if (pCmdParam->psize != sizeof(uint32_t)) {
         ALOGE("handleSetParam: EFFECT_CMD_SET_PARAM called with invalid psize = %d, expected psize = %zu", pCmdParam->vsize, sizeof(uint32_t));
         return -EINVAL;
     }
-
     *(int32_t *) pReplyData = 0;
     int32_t *intValues = (int32_t *) (pCmdParam->data + vOffset);
-
-    uint32_t key = *(uint32_t *) (pCmdParam->data);
+    uint32_t key = *(uint32_t *) (pCmdParam->data); ALOGE("handleGetParam: called with key: %d (0x%X)", key, key);
     switch (key) {
         case PARAM_SET_RESET: {
             ALOGD("handleSetParam: PARAM_SET_RESET called");
@@ -157,11 +131,9 @@ int32_t ViPERContext::handleSetParam(effect_param_t *pCmdParam, void *pReplyData
             return 0;
         }
         case PARAM_SET_VIPER_DDC_COEFFICIENTS: {
-
             uint32_t size = *(uint32_t *) (pCmdParam->data + vOffset);
             float *coeffs44100 = (float *) (pCmdParam->data + vOffset + sizeof(uint32_t));
             float *coeffs48000 = (float *) (pCmdParam->data + vOffset + sizeof(uint32_t) + sizeof(float) * size);
-
             ALOGD("handleSetParam: PARAM_SET_VIPER_DDC_COEFFICIENTS called with size = %d", size);
             viper.viperDdc.SetCoeffs(size, coeffs44100, coeffs48000);
             return 0;
@@ -179,7 +151,6 @@ int32_t ViPERContext::handleSetParam(effect_param_t *pCmdParam, void *pReplyData
                 *(int32_t *) pReplyData = -EINVAL;
                 return 0;
             }
-
             ALOGD("handleSetParam: PARAM_SET_VIPER_BASS_MODE called with mode = %d", mode);
             viper.viperBass.SetProcessMode(static_cast<ViPERBass::ProcessMode>(mode));
             return 0;
@@ -209,7 +180,6 @@ int32_t ViPERContext::handleSetParam(effect_param_t *pCmdParam, void *pReplyData
                 *(int32_t *) pReplyData = -EINVAL;
                 return 0;
             }
-
             ALOGD("handleSetParam: PARAM_SET_VIPER_CLARITY_MODE called with mode = %d", mode);
             viper.viperClarity.SetProcessMode(static_cast<ViPERClarity::ClarityMode>(mode));
             return 0;
@@ -258,7 +228,6 @@ int32_t ViPERContext::handleSetParam(effect_param_t *pCmdParam, void *pReplyData
                 *(int32_t *) pReplyData = -EINVAL;
                 return 0;
             }
-
             ALOGD("handleSetParam: PARAM_SET_ANALOGX_LEVEL called with level = %d", level);
             viper.analogX.SetProcessingModel(level);
             return 0;
@@ -452,20 +421,16 @@ int32_t ViPERContext::handleSetParam(effect_param_t *pCmdParam, void *pReplyData
         }
     }
 }
-
 int32_t ViPERContext::handleGetParam(effect_param_t *pCmdParam, effect_param_t *pReplyParam, uint32_t *pReplySize) {
     // The value offset of an effect parameter is computed by rounding up
     // the parameter size to the next 32 bit alignment.
     uint32_t vOffset = ((pCmdParam->psize + sizeof(int32_t) - 1) / sizeof(int32_t)) * sizeof(int32_t);
-
     if (pCmdParam->psize != sizeof(uint32_t)) {
         ALOGE("handleGetParam() EFFECT_CMD_GET_PARAM called with invalid psize = %d, expected psize = %zu", pCmdParam->vsize, sizeof(uint32_t));
         return -EINVAL;
     }
-
     memcpy(pReplyParam, pCmdParam, sizeof(effect_param_t) + pCmdParam->psize);
-
-    uint32_t key = *(uint32_t *) (pCmdParam->data);
+    uint32_t key = *(uint32_t *) (pCmdParam->data); ALOGE("handleGetParam: called with key: %d (0x%X)", key, key);
     switch (key) {
         case PARAM_GET_ENABLED: {
             pReplyParam->status = 0;
@@ -558,7 +523,6 @@ int32_t ViPERContext::handleGetParam(effect_param_t *pCmdParam, effect_param_t *
         }
     }
 }
-
 int32_t ViPERContext::handleCommand(uint32_t cmdCode, uint32_t cmdSize, void *pCmdData, uint32_t *pReplySize, void *pReplyData) {
     uint32_t replySize = pReplySize == nullptr ? 0 : *pReplySize;
     switch (cmdCode) {
@@ -629,7 +593,6 @@ int32_t ViPERContext::handleCommand(uint32_t cmdCode, uint32_t cmdSize, void *pC
         }
     }
 }
-
 template <typename T>
 void pcmToFloat(float* dst, const T* src, size_t frameCount) {
     constexpr float max_val = static_cast<float>(std::numeric_limits<T>::max());
@@ -637,12 +600,10 @@ void pcmToFloat(float* dst, const T* src, size_t frameCount) {
         dst[i] = static_cast<float>(src[i]) / max_val;
     }
 }
-
 template <typename T>
 static const T& clamp(const T& v, const T& lo, const T& hi) {
     return std::min(std::max(v, lo), hi);
 }
-
 static void floatToFloat(float *dst, const float *src, size_t frameCount, bool accumulate) {
     if (accumulate) {
         for (size_t i = 0; i < frameCount * 2; i++) {
@@ -652,12 +613,10 @@ static void floatToFloat(float *dst, const float *src, size_t frameCount, bool a
         memcpy(dst, src, frameCount * 2 * sizeof(float));
     }
 }
-
 template <typename T, typename U>
 void floatToPcm(T *dst, const float *src, size_t frameCount, bool accumulate) {
     constexpr T max_val = std::numeric_limits<T>::max();
     constexpr T min_val = std::numeric_limits<T>::min();
-
     for (size_t i = 0; i < frameCount * 2; i++) {
         T pcm = static_cast<T>(src[i] * static_cast<float>(max_val));
         if (accumulate) {
@@ -668,23 +627,19 @@ void floatToPcm(T *dst, const float *src, size_t frameCount, bool accumulate) {
         }
     }
 }
-
 static audio_buffer_t *getBuffer(buffer_config_s *config, audio_buffer_t *buffer) {
     if (buffer != nullptr) return buffer;
     if (config->mask & EFFECT_CONFIG_BUFFER) return &config->buffer;
     // EFFECT_CONFIG_PROVIDER not implemented, it's not used by any known effect
     return nullptr;
 }
-
 int32_t ViPERContext::process(audio_buffer_t *inBuffer, audio_buffer_t *outBuffer) {
     if (disableReason != DisableReason::NONE) {
         return -EINVAL;
     }
-
     if (!enabled) {
         return -ENODATA;
     }
-
     inBuffer = getBuffer(&config.inputCfg, inBuffer);
     outBuffer = getBuffer(&config.outputCfg, outBuffer);
     if (inBuffer == nullptr || outBuffer == nullptr ||
@@ -693,14 +648,12 @@ int32_t ViPERContext::process(audio_buffer_t *inBuffer, audio_buffer_t *outBuffe
         inBuffer->frameCount == 0) {
         return -EINVAL;
     }
-
     size_t frameCount = inBuffer->frameCount;
     if (frameCount > bufferFrameCount) {
         // This should never happen, but just in case
         buffer.resize(frameCount * 2);
         bufferFrameCount = frameCount;
     }
-
     switch (config.inputCfg.format) {
         case AUDIO_FORMAT_PCM_16_BIT:
             pcmToFloat<int16_t>(buffer.data(), inBuffer->s16, frameCount);
@@ -714,9 +667,7 @@ int32_t ViPERContext::process(audio_buffer_t *inBuffer, audio_buffer_t *outBuffe
         default:
             return -EINVAL;
     }
-
     viper.process(buffer.data(), frameCount);
-
     const bool accumulate = config.outputCfg.accessMode == EFFECT_BUFFER_ACCESS_ACCUMULATE;
     switch (config.outputCfg.format) {
         case AUDIO_FORMAT_PCM_16_BIT:
@@ -731,12 +682,9 @@ int32_t ViPERContext::process(audio_buffer_t *inBuffer, audio_buffer_t *outBuffe
         default:
             return -EINVAL;
     }
-
     processTimeMs = std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
-
     return 0;
 }
-
 int32_t ViPERContext::process(float *inBuffer, float *outBuffer, size_t count) {
     if (inBuffer != outBuffer) {
         memcpy(outBuffer, inBuffer, count * sizeof(float));
@@ -744,12 +692,9 @@ int32_t ViPERContext::process(float *inBuffer, float *outBuffer, size_t count) {
     // The viper process function expects the count to be the number of
     // stereo frames, not the number of samples. Thus, we divide by 2.
     viper.process(outBuffer, count / 2);
-
     processTimeMs = std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
-
     return 0;
 }
-
 void ViPERContext::setDisableReason(DisableReason reason) {
     if (reason != DisableReason::NONE) {
         ALOGE("ViPERContext::setDisableReason called with reason = %d", static_cast<int32_t>(reason));

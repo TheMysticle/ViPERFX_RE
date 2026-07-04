@@ -1,5 +1,4 @@
 #pragma once
-
 #include "utils/WaveBuffer.h"
 #include "effects/SpectrumExtend.h"
 #include "effects/Reverberation.h"
@@ -22,11 +21,9 @@
 #include "effects/PlaybackGain.h"
 #include "../ViPER4Android.h"
 #include <array>
-
 class ViPER {
 public:
     ViPER();
-
     void process(float *buffer, uint32_t size);
     void reset();
     uint64_t getFrameCount();
@@ -34,7 +31,6 @@ public:
     void setOutputVolume(float volume);
     void setChannelPan(float pan);
     void setThresholdLimit(float thresholdLimit);
-
     // Effects
     AdaptiveBuffer adaptiveBuffer;
     WaveBuffer waveBuffer;
@@ -55,7 +51,6 @@ public:
     TubeSimulator tubeSimulator;
     AnalogX analogX;
     SpeakerCorrection speakerCorrection;
-
 private:
     std::array<SoftwareLimiter, 2> softwareLimiters;
     uint64_t frameCount;

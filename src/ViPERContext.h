@@ -35,6 +35,9 @@ private:
     bool enabled;
     ViPER viper;
 
+    // Timestamp (ms since epoch) of the last time process() ran
+    uint64_t processTimeMs;
+
     static void copyBufferConfig(buffer_config_t *dest, buffer_config_t *src);
     void handleSetConfig(effect_config_t *newConfig);
     int32_t handleSetParam(effect_param_t *pCmdParam, void *pReplyData);

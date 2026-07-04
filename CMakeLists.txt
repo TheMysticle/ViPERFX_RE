@@ -161,6 +161,10 @@ include_directories(
         /home/Mysticle/crDroid/system/core/include
         /home/Mysticle/crDroid/system/libfmq/include
         /home/Mysticle/crDroid/system/libfmq/base
+        /home/Mysticle/crDroid/frameworks/native/libs/binder/ndk/include_cpp
+        /home/Mysticle/crDroid/hardware/interfaces/audio/aidl/default/include
+        /home/Mysticle/crDroid/hardware/interfaces/audio/aidl/common/include
+        /home/Mysticle/crDroid/system/media/audio_utils/include
 )
 
 set(FILES

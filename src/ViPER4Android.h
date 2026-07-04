@@ -1,21 +1,16 @@
 #pragma once
-
 #ifndef VIPER_VERSION
 #define VIPER_VERSION "2.5.0.4"
 #endif
-
 #ifndef VIPER_VERSION_CODE
 #define VIPER_VERSION_CODE 2504
 #endif
-
 namespace ViPER4Android {
     static const char *const kName = "ViPER4Android";
     static const char *const kImplementor = "Iscle, Martmists, ViPER ACOUSTIC";
-
     static const char *const kTypeString = "ec7178ec-e5e1-4432-a3f4-4657e6795210";
     static const char *const kUuidString = "90380da3-8536-4744-a6a3-5731970e640f";
 };
-
 typedef enum {
     PARAM_GET_ENABLED = 1,
     PARAM_GET_FRAME_COUNT = 2, // Reusing CONFIGURE?
@@ -28,7 +23,6 @@ typedef enum {
     PARAM_GET_CONFIG = 10,
     PARAM_GET_ARCHITECTURE = 11,
 } param_get_t;
-
 typedef enum {
     PARAM_SET_RESET = 0x10000,
     PARAM_SET_VIPER_DDC_ENABLE = 65546,
