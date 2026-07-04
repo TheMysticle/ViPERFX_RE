@@ -160,8 +160,6 @@ ndk::ScopedAStatus ViPER4AIDL::command(CommandId commandId) {
 
             uint32_t replySize = sizeof(int32_t);
             int32_t replyData = 0;
-            // Reset the effect buffers before starting to prevent audio popping from previous states
-            viperContext.handleCommand(EFFECT_CMD_RESET, 0, nullptr, &replySize, &replyData);
             viperContext.handleCommand(EFFECT_CMD_ENABLE, 0, nullptr, &replySize, &replyData);
 
             if (notifyEventFlag(mDataMqNotEmptyEf) != RetCode::SUCCESS) {
@@ -199,6 +197,10 @@ ndk::ScopedAStatus ViPER4AIDL::command(CommandId commandId) {
 
             stopThread();
             resetBuffer();
+
+            uint32_t replySize = sizeof(int32_t);
+            int32_t replyData = 0;
+            viperContext.handleCommand(EFFECT_CMD_RESET, 0, nullptr, &replySize, &replyData);
 
             break;
         }

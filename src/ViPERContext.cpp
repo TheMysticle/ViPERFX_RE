@@ -143,7 +143,7 @@ int32_t ViPERContext::handleSetParam(effect_param_t *pCmdParam, void *pReplyData
     *(int32_t *) pReplyData = 0;
     int32_t *intValues = (int32_t *) (pCmdParam->data + vOffset);
 
-    uint32_t key = *(uint32_t *) (pCmdParam->data); ALOGE("handleGetParam: called with key: %d (0x%X)", key, key);
+    uint32_t key = *(uint32_t *) (pCmdParam->data);
     switch (key) {
         case PARAM_SET_RESET: {
             ALOGD("handleSetParam: PARAM_SET_RESET called");
@@ -465,7 +465,7 @@ int32_t ViPERContext::handleGetParam(effect_param_t *pCmdParam, effect_param_t *
 
     memcpy(pReplyParam, pCmdParam, sizeof(effect_param_t) + pCmdParam->psize);
 
-    uint32_t key = *(uint32_t *) (pCmdParam->data); ALOGE("handleGetParam: called with key: %d (0x%X)", key, key);
+    uint32_t key = *(uint32_t *) (pCmdParam->data);
     switch (key) {
         case PARAM_GET_ENABLED: {
             pReplyParam->status = 0;
