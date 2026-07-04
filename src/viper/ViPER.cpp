@@ -10,7 +10,10 @@ ViPER::ViPER() :
     frameCount(0),
     samplingRate(VIPER_DEFAULT_SAMPLING_RATE),
     gainL(1.0),
-    gainR(1.0) {
+    gainR(1.0),
+    masterVolume(1.0),
+    panL(1.0),
+    panR(1.0) {
     ALOGI("Welcome to ViPER FX");
 //    ALOGI("Current version is %d", VIPER_VERSION);
 
@@ -489,9 +492,22 @@ uint64_t ViPER::getFrameCount() {
     return this->frameCount;
 }
 
-void ViPER::setGain(float gainL, float gainR) {
-    this->gainL = gainL;
-    this->gainR = gainR;
+void ViPER::setOutputVolume(float volume) {
+    this->masterVolume = volume;
+    this->gainL = this->masterVolume * this->panL;
+    this->gainR = this->masterVolume * this->panR;
+}
+
+void ViPER::setChannelPan(float pan) {
+    if (pan < 0.0f) {
+        this->panL = 1.0f;
+        this->panR = 1.0f + pan;
+    } else {
+        this->panL = 1.0f - pan;
+        this->panR = 1.0f;
+    }
+    this->gainL = this->masterVolume * this->panL;
+    this->gainR = this->masterVolume * this->panR;
 }
 
 void ViPER::setThresholdLimit(float thresholdLimit) {

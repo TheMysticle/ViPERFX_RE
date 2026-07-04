@@ -88,7 +88,9 @@ LAB_0006d8fc:
     fVar9 = abs_sample * fVar9;
     fVar10 = std::abs(fVar9);
     if (this->gate <= fVar10) {
-        fVar9 = this->gate / std::abs(abs_sample);
+        float denom = std::abs(abs_sample);
+        if (denom < 1e-10f) denom = 1e-10f;
+        fVar9 = this->gate / denom;
     }
     if (this->gate <= fVar10) {
         this->unknown2 = fVar9;

@@ -31,7 +31,8 @@ public:
     void reset();
     uint64_t getFrameCount();
     void setSamplingRate(uint32_t samplingRate);
-    void setGain(float gainL, float gainR);
+    void setOutputVolume(float volume);
+    void setChannelPan(float pan);
     void setThresholdLimit(float thresholdLimit);
 
     // Effects
@@ -61,4 +62,7 @@ private:
     uint32_t samplingRate;
     float gainL;
     float gainR;
+    float masterVolume;
+    float panL;
+    float panR;
 };
