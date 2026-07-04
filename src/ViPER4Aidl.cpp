@@ -158,6 +158,12 @@ ndk::ScopedAStatus ViPER4AIDL::command(CommandId commandId) {
             }
             mState = State::PROCESSING;
 
+            uint32_t replySize = sizeof(int32_t);
+            int32_t replyData = 0;
+            // Reset the effect buffers before starting to prevent audio popping from previous states
+            viperContext.handleCommand(EFFECT_CMD_RESET, 0, nullptr, &replySize, &replyData);
+            viperContext.handleCommand(EFFECT_CMD_ENABLE, 0, nullptr, &replySize, &replyData);
+
             if (notifyEventFlag(mDataMqNotEmptyEf) != RetCode::SUCCESS) {
                 ALOGE("command: failed to notify not empty event flag");
                 return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
